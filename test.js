@@ -1,13 +1,23 @@
 const {WebClient} = require("@slack/web-api");
-require("dotenv").config();
 
-const token = process.env.SLACK_USER_TOKEN;
-const client = new WebClient(token);
+const tok = process.env.SLACK_USER_TOKEN;
+const cli = new WebClient(tok);
 
 async function main() {
-    const result = await client.auth.test();
-    console.log(result);
+    const auth = await cli.auth.test();
+    const myUID = auth.user_id;
+
+    //dm with myself
+    const dm = await cli.conversations.open({ users: myUID});
+    const channelId = dm.channel.id;
+
+    await cli.chat.postMessage({
+        channel: channelId,
+        text: "hello from yo bro Ditto!"
+    });
+
+    console.log("msg sent! check yo Slack Dm's")
 }
 
-main();
 
+main();
