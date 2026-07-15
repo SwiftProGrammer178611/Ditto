@@ -2,7 +2,9 @@ const { App } = require("@slack/bolt");
 
 const fs = require("fs");
     const NOTES_FILE = "notes.json";
-    
+    const reactWhen =[
+        {keyword:"hackclub", type: "react", emoji: "tada" },
+    ]
     function loadNotes() {
         if(!fs.existsSync(NOTES_FILE)) return [];
         return JSON.parse(fs.readFileSync(NOTES_FILE, "utf8"));
@@ -40,6 +42,17 @@ let myUID = null;
 app.message(async ({ message, client})=> {
     if(!myUID) return;
     const isSelfDm = message.channel_type === "im" && message.user === myUID;
+    for(const rule of reactWhen) {
+    if(message.text.toLowerCase().includes(rule.keyword)){
+        if(rule.type === "react"){
+            await client.reactions.add({
+                channel: message.channel,
+                timestamp: message.ts,
+                name: rule.emoji,
+            });
+        }
+    }
+}
     if(isSelfDm && message.text && message.text.startsWith("!")) {
         if(message.text === "!ping") {
             await client.chat.postMessage({
@@ -104,7 +117,6 @@ app.message(async ({ message, client})=> {
     } else if(message.text === "!clearstatus"){
          await client.users.profile.set({
             profile: JSON.stringify({ status_text: "", status_emoji: "", status_expiration: 0}),
-
          });
          await client.chat.postMessage({ channel: message.channel, text: "status cleared."});
     }
