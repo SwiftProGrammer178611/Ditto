@@ -168,7 +168,7 @@ app.message(async ({ message, client }) => {
             await client.chat.postMessage({ channel: message.channel, text: "status cleared." });
         } else if (message.text.startsWith("!away")) {
             awayMsg = message.text.slice("!away ".length);
-            await client.chat.postMessage({ channel: message.channel, text: `ok , marked away: "${awayMsg}` });
+            await client.chat.postMessage({ channel: message.channel, text: `ok , marked away: "${awayMsg}"` });
         }
         else if (message.text === "!back") {
             awayMsg = null;
