@@ -21,6 +21,7 @@ function loadReminders() {
 function saveReminders(reminders) {
     fs.writeFileSync(remindersfile, JSON.stringify(reminders, null, 2));
 }
+
 const activeTimers = {};
 function scheduleReminder(reminder, client) {
     const delay = Math.max(0, reminder.fireAt - Date.now());
@@ -62,7 +63,7 @@ app.message(async ({ message, client }) => {
     if (!myUID) return;
     const isSelfDm = message.channel_type === "im" && message.user === myUID;
     for (const rule of reactWhen) {
-        if (message.text.toLowerCase().includes(rule.keyword)) {
+        if (message.text && message.text.toLowerCase().includes(rule.keyword)) {
             if (rule.type === "react") {
                 await client.reactions.add({
                     channel: message.channel,
@@ -103,10 +104,23 @@ app.message(async ({ message, client }) => {
             const helpText = [
                 "*Ditto commands:*",
                 "`!ping` - test it's alive",
-                "`!notes` - save a note",
+                "`!note <text>` - save a note",
                 "`!notes` - list your notes",
                 "`!clearnotes` - delete all notes",
                 "`!remind <minutes> <text>` - DM yourself a reminder later",
+                "`!reminders` - list your pending reminders",
+                "`!cancel <id>` - cancel a pending reminder",
+                "`!status <emoji> <text>` - set your Slack status",
+                "`!clearstatus` - clear your Slack status",
+                "`!away <text>` - mark yourself away, auto-replies to DMs with this message",
+                "`!back` - turn off away mode",
+                "`!mirror <text>` - reverses your text",
+                "`!joke` - tells a random joke",
+                "`!uptime` - shows how long Ditto has been running",
+                "`!8ball <question>` - magic 8-ball style answer",
+                "`!weather <city>` - current weather for a city",
+                "`!translate <lang code> <text>` - translates text (from English)",
+                "`!lockin` - for morale",
             ].join("\n");
             await client.chat.postMessage({ channel: message.channel, text: helpText });
         } else if (message.text === "!clearnotes") {
@@ -199,7 +213,7 @@ app.message(async ({ message, client }) => {
             const mins = Math.floor((Date.now()-startTime) / 60000);
             await client.chat.postMessage({channel:message.channel, text: `been running for ${mins} minutes(s)`});
 
-        }else if(message.text === "!8balll"){
+        }else if(message.text.startsWith("!8ball")){
             const answers = ["yes", "no.", "ask again later.","absolutely not.", "the stars say yes.", "lol no.", "definitely.", "unclear", "try again."];
             const pick = answers[Math.floor(Math.random()*answers.length)];
             await client.chat.postMessage({channel:message.channel, text: pick});
@@ -215,6 +229,25 @@ app.message(async ({ message, client }) => {
             }
         } else if(message.text === "!lockin"){
             await client.chat.postMessage({channel:message.channel, text:"YOU GO THIS BRUTHA! LOCKIN AND SHIIP IT!! GET THEM GOODS"});
+        }else if(message.text.startsWith("!translate ")){
+            const rest = message.text.slice("!translate ".length);
+            const match = rest.match(/^(\S+)\s+(.+)$/);
+            if(!match){
+                await client.chat.postMessage({channel: message.channel, text: "usage: !translate <lang code> <text>"})
+            }else{
+                const lang = match [1]
+                const text = match [2]
+
+                try{
+                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${lang}`);
+                    const data = await res.json();
+                    await client.chat.postMessage({channel:message.channel, text:data.responseData.translatedText});
+                }catch(err){
+                    await client.chat.postMessage({channel:message.channel, text:"translate not translating"})
+                }
+                
+            }
+
         }
         return;
     }
